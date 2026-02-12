@@ -22,7 +22,7 @@ export default function Home() {
     return (
       <>
         <Head>
-          <title>CAFCOOP - Chargement...</title>
+          <title>Harvest More- Chargement...</title>
         </Head>
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}>⏳</div>
@@ -39,7 +39,7 @@ export default function Home() {
     return (
       <>
         <Head>
-          <title>CAFCOOP - Connexion</title>
+          <title>Harvest More- Connexion</title>
         </Head>
         <AuthScreen onAuthSuccess={(newSession) => {
           UILog.pageView('auth-success', newSession.user.id);
@@ -56,7 +56,7 @@ export default function Home() {
     return (
       <>
         <Head>
-          <title>CAFCOOP - Erreur</title>
+          <title>Harvest More - Erreur</title>
         </Head>
         <div style={styles.errorContainer}>
           <div style={styles.errorIcon}>⚠️</div>
@@ -298,31 +298,48 @@ const styles = {
     borderRadius: '8px',
     color: '#7c2d12',
   },
+  // --- DANS pages/index.js (objet styles) ---
+
   sectionsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '20px',
+    // On passe à 140px minimum pour permettre 2 colonnes sur la plupart des téléphones
+    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
+    gap: '12px', // Un peu moins d'espace pour gagner de la place
+    padding: '10px 0',
   },
   sectionCard: {
     background: 'white',
-    borderRadius: '12px',
-    padding: '30px',
+    borderRadius: '16px', // Coins plus arrondis pour le look "v2"
+    padding: '20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
     textAlign: 'center',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+    transition: 'transform 0.2s ease',
     cursor: 'pointer',
-    transition: 'transform 0.2s',
+    border: '1px solid #f0f0f0',
+    aspectRatio: '1 / 1', // Force les tuiles à être carrées
   },
-  sectionIcon: {
-    fontSize: '48px',
-    marginBottom: '15px',
-  },
-  sectionTitle: {
-    fontSize: '20px',
-    color: '#2d3748',
+  iconWrapper: {
+    fontSize: '32px',
     marginBottom: '10px',
   },
-  sectionDesc: {
+  sectionTitle: {
     fontSize: '14px',
+    fontWeight: '600',
+    color: '#2d3748',
+    margin: 0,
+  }
+
+  sectionIcon: {
+    fontSize: '48px',
+    marginBottom: '0',
+  },
+  
+  sectionDesc: {
+    fontSize: '11px',
     color: '#718096',
   },
   footer: {
