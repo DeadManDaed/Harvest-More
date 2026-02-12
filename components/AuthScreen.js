@@ -89,10 +89,10 @@ export default function AuthScreen({ onAuthSuccess }) {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          // On ajoute ?next=/profil pour dire au callback où envoyer l'utilisateur
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/profil`,
         },
       });
-
       if (error) {
         AuthLog.signupFailure(email, error);
         ErrorLog.handled(error, { context: 'handleSignUp', email });
