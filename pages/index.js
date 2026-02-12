@@ -82,7 +82,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>CAFCOOP - Accueil</title>
+        <title>Harvest More - Accueil</title>
       </Head>
       <div style={styles.appContainer}>
         <header style={styles.header}>
@@ -153,7 +153,7 @@ export default function Home() {
             </div>
 
             <div style={styles.sectionCard}>
-              <div style={styles.sectionIcon}>👤</div>
+              <div style={styles.sectionIcon} onClick={() => window.location.href = '/profil'}>👤</div>
               <h3 style={styles.sectionTitle}>Profil</h3>
               <p style={styles.sectionDesc}>Gérer votre compte</p>
             </div>
