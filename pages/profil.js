@@ -138,7 +138,7 @@ const styles = {
   badge: { background: '#ebf4ff', color: '#4299e1', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' },
   form: { display: 'flex', flexDirection: 'column', gap: '15px' },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '5px' },
-  label: { fontSize: '14px', fontWeight: '600', color: '#4a5568' },
+  label: { fontSize: '13px', fontWeight: '600', color: '#4a5568' },
   input: { padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '16px' },
   submitBtn: { padding: '15px', borderRadius: '8px', border: 'none', background: '#667eea', color: 'white', fontWeight: '600', fontSize: '16px', cursor: 'pointer', marginTop: '10px' },
   message: { padding: '12px', borderRadius: '8px', marginBottom: '15px', fontSize: '14px', textAlign: 'center' }
