@@ -102,18 +102,23 @@ export default function AuthScreen({ onAuthSuccess }) {
       }
 
       // Vérifier si confirmation email requise
-      if (data.user && !data.session) {
-        AuthLog.signupSuccess(data.user.id, email);
-        setMessage({ 
-          text: '📧 Email de confirmation envoyé. Vérifie ta boîte mail.', 
-          type: 'success' 
-        });
-        setLoading(false);
-        return;
-      }
+   if (data.user && !data.session) {
+  AuthLog.signupSuccess(data.user.id, email);
+  setMessage({ 
+    text: '📧 Email de confirmation envoyé. Vérifie ta boîte mail.', 
+    type: 'success' 
+  });
+  setLoading(false);
+  return;
+}
 
-      AuthLog.signupSuccess(data.user.id, email);
-      setMessage({ text: '✅ Compte créé !', type: 'success' });
+AuthLog.signupSuccess(data.user.id, email);
+setMessage({ text: '✅ Compte créé ! Redirection...', type: 'success' });
+
+// FORCER RELOAD COMPLET après 1 seconde
+setTimeout(() => {
+  window.location.href = '/';
+}, 1000);
       
       if (onAuthSuccess && data.session) {
         onAuthSuccess(data.session);
