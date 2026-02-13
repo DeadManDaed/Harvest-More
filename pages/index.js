@@ -22,7 +22,7 @@ export default function Home() {
     return (
       <>
         <Head>
-          <title>Harvest More- Chargement...</title>
+          <title>CAFCOOP - Chargement...</title>
         </Head>
         <div style={styles.loadingContainer}>
           <div style={styles.spinner}>⏳</div>
@@ -39,7 +39,7 @@ export default function Home() {
     return (
       <>
         <Head>
-          <title>Harvest More- Connexion</title>
+          <title>CAFCOOP - Connexion</title>
         </Head>
         <AuthScreen onAuthSuccess={(newSession) => {
           UILog.pageView('auth-success', newSession.user.id);
@@ -56,7 +56,7 @@ export default function Home() {
     return (
       <>
         <Head>
-          <title>Harvest More - Erreur</title>
+          <title>CAFCOOP - Erreur</title>
         </Head>
         <div style={styles.errorContainer}>
           <div style={styles.errorIcon}>⚠️</div>
@@ -82,7 +82,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Harvest More - Accueil</title>
+        <title>CAFCOOP - Accueil</title>
       </Head>
       <div style={styles.appContainer}>
         <header style={styles.header}>
@@ -152,8 +152,14 @@ export default function Home() {
               <p style={styles.sectionDesc}>Suivre vos commandes</p>
             </div>
 
-            <div style={styles.sectionCard}>
-              <div style={styles.sectionIcon} onClick={() => window.location.href = '/profil'}>👤</div>
+            <div 
+              style={styles.sectionCard}
+              onClick={() => {
+                UILog.buttonClick('section-profil', { userId: user.id });
+                window.location.href = '/profil';
+              }}
+            >
+              <div style={styles.sectionIcon}>👤</div>
               <h3 style={styles.sectionTitle}>Profil</h3>
               <p style={styles.sectionDesc}>Gérer votre compte</p>
             </div>
@@ -298,48 +304,31 @@ const styles = {
     borderRadius: '8px',
     color: '#7c2d12',
   },
-  // --- DANS pages/index.js (objet styles) ---
-
   sectionsGrid: {
     display: 'grid',
-    // On passe à 140px minimum pour permettre 2 colonnes sur la plupart des téléphones
-    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
-    gap: '12px', // Un peu moins d'espace pour gagner de la place
-    padding: '10px 0',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '20px',
   },
   sectionCard: {
     background: 'white',
-    borderRadius: '16px', // Coins plus arrondis pour le look "v2"
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: '12px',
+    padding: '30px',
     textAlign: 'center',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-    transition: 'transform 0.2s ease',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
     cursor: 'pointer',
-    border: '1px solid #f0f0f0',
-    aspectRatio: '1 / 1', // Force les tuiles à être carrées
+    transition: 'transform 0.2s',
   },
-  iconWrapper: {
-    fontSize: '32px',
-    marginBottom: '10px',
-  },
-  sectionTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#2d3748',
-    margin: 0,
-  },
-
   sectionIcon: {
     fontSize: '48px',
-    marginBottom: '0',
+    marginBottom: '15px',
   },
-  
+  sectionTitle: {
+    fontSize: '20px',
+    color: '#2d3748',
+    marginBottom: '10px',
+  },
   sectionDesc: {
-    fontSize: '11px',
+    fontSize: '14px',
     color: '#718096',
   },
   footer: {
