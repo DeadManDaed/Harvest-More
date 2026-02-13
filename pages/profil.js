@@ -128,7 +128,7 @@ export default function Profil() {
 
 const styles = {
   container: { padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: 'sans-serif', backgroundColor: '#f7fafc', minHeight: '100vh' },
-  header: { display: 'flex', alignItems: 'center', marginBottom: '20px', gap: '15px' },
+  header: { display: 'flex', alignItems: 'center', marginBottom: '19px', gap: '15px' },
   backBtn: { background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' },
   title: { fontSize: '20px', fontWeight: '700', margin: 0 },
   card: { background: 'white', padding: '25px', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' },
