@@ -331,7 +331,7 @@ const styles = {
     fontWeight: '600',
     color: '#2d3748',
     margin: 0,
-  }
+  },
 
   sectionIcon: {
     fontSize: '48px',
