@@ -1,6 +1,6 @@
 // hooks/useAuth-fixed.js
 import { useState, useEffect, useRef } from 'react';
-import { getSupabaseBrowser, resetSupabaseClient } from '../lib/supabase-fixed';
+import { getSupabaseBrowser, resetSupabaseClient } from '../lib/supabase';
 import { AuthLog, ProfileLog, ErrorLog, PerfLog } from '../lib/log';
 
 /**
