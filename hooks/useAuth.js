@@ -12,7 +12,7 @@ export function useAuth() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Refs pour éviter les appels multiples
   const initAttempted = useRef(false);
   const loadProfileAttempted = useRef(new Set());
@@ -22,7 +22,7 @@ export function useAuth() {
   // ========================================
   const loadProfile = async (authUserId, retryCount = 0) => {
     const maxRetries = 2;
-    
+
     // Éviter les doubles appels
     const cacheKey = `${authUserId}-${retryCount}`;
     if (loadProfileAttempted.current.has(cacheKey)) {
@@ -74,12 +74,12 @@ export function useAuth() {
       // Si profil n'existe pas, appeler l'API pour le créer
       if (!userRow) {
         ProfileLog.createAttempt(authUserId, 'fetching email...');
-        
+
         const { data: { user: authUser } } = await supabase.auth.getUser();
         const email = authUser?.email || '';
 
         ProfileLog.createAttempt(authUserId, email);
-        
+
         // Timeout pour l'API aussi
         const apiPromise = fetch('/api/auth/link-profile', {
           method: 'POST',
@@ -111,7 +111,7 @@ export function useAuth() {
       }
 
       ProfileLog.loadSuccess(authUserId, userRow.id_utilisateur, userRow.role);
-      
+
       // Vérifier profil incomplet
       if (!userRow.nom || !userRow.prenom) {
         ProfileLog.profileIncomplete(userRow.id_utilisateur, {
@@ -226,13 +226,13 @@ export function useAuth() {
           if (sessionError.message?.includes('aborted')) {
             console.warn('⚠️ Session aborted, reset client et retry...');
             resetSupabaseClient();
-            
+
             // Retry une fois
             try {
               const retryResult = await supabase.auth.getSession();
               currentSession = retryResult.data?.session || null;
               sessionError = retryResult.error || null;
-              
+
               if (sessionError) {
                 AuthLog.loginFailure('session-check', sessionError);
                 throw sessionError;
@@ -341,7 +341,61 @@ export function useAuth() {
     } catch (err) {
       console.error('❌ Erreur onAuthStateChange:', err);
     }
+      
+     
+// Polling de secours toutes les 5 secondes
+const pollInterval = setInterval(async () => {
+  if (!isMounted) return;
+  
+  try {
+    const supabase = getSupabaseBrowser();
+    const { data: { session: polledSession } } = await supabase.auth.getSession();
+    
+    // Si session existe mais state vide → rafraîchir
+    if (polledSession && !session) {
+      console.log('🔄 Polling détecté session, refresh état...');
+      setSession(polledSession);
+      setUser(polledSession.user);
+      setLoading(true);
+      
+      try {
+        const userProfile = await loadProfile(polledSession.user.id);
+        if (isMounted) {
+          setProfile(userProfile);
+          setError(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+    
+    // Si pas de session mais state plein → nettoyer
+    if (!polledSession && session) {
+      console.log('🔄 Polling détecté logout, nettoyage...');
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setError(null);
+      setLoading(false);
+    }
+  } catch (err) {
+    console.warn('⚠️ Polling error:', err);
+  }
+}, 5000); // Toutes les 5 secondes
 
+// Cleanup
+return () => {
+  isMounted = false;
+  if (initTimeout) clearTimeout(initTimeout);
+  subscription?.unsubscribe();
+  clearInterval(pollInterval); // ← AJOUTER ICI
+};
     // Cleanup
     return () => {
       isMounted = false;
@@ -359,3 +413,57 @@ export function useAuth() {
     refreshProfile,
   };
 }
+
+// Polling de secours toutes les 5 secondes
+const pollInterval = setInterval(async () => {
+  if (!isMounted) return;
+  
+  try {
+    const supabase = getSupabaseBrowser();
+    const { data: { session: polledSession } } = await supabase.auth.getSession();
+    
+    // Si session existe mais state vide → rafraîchir
+    if (polledSession && !session) {
+      console.log('🔄 Polling détecté session, refresh état...');
+      setSession(polledSession);
+      setUser(polledSession.user);
+      setLoading(true);
+      
+      try {
+        const userProfile = await loadProfile(polledSession.user.id);
+        if (isMounted) {
+          setProfile(userProfile);
+          setError(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+    
+    // Si pas de session mais state plein → nettoyer
+    if (!polledSession && session) {
+      console.log('🔄 Polling détecté logout, nettoyage...');
+      setSession(null);
+      setUser(null);
+      setProfile(null);
+      setError(null);
+      setLoading(false);
+    }
+  } catch (err) {
+    console.warn('⚠️ Polling error:', err);
+  }
+}, 5000); // Toutes les 5 secondes
+
+// Cleanup
+return () => {
+  isMounted = false;
+  if (initTimeout) clearTimeout(initTimeout);
+  subscription?.unsubscribe();
+  clearInterval(pollInterval); // ← AJOUTER ICI
+};
