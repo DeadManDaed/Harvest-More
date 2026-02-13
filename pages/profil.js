@@ -4,8 +4,10 @@ import { useAuth } from '../hooks/useAuth';
 import { getSupabaseBrowser } from '../lib/supabase';
 import { ProfileLog, UILog, ErrorLog } from '../lib/log';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 
 export default function Profil() {
+const router = useRouter();
   const { user, profile, refreshProfile, loading: authLoading, error: authError } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -193,15 +195,9 @@ export default function Profil() {
       
       <div style={styles.container}>
         <header style={styles.header}>
-          <button 
-            onClick={() => {
-              UILog.buttonClick('back-to-home', { userId: user.id });
-              window.location.href = '/';
-            }} 
-            style={styles.backBtn}
-          >
-            ←
-          </button>
+          <button onClick={() => router.push('/')} style={styles.backBtn}>
+    ←
+  </button>
           <h1 style={styles.title}>Mon Profil</h1>
         </header>
 
