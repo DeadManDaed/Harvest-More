@@ -207,10 +207,19 @@ export function useAuth() {
           setTimeout(() => reject(new Error('getSession timeout')), 5000)
         );
 
-        const { data: { session: currentSession }, error: sessionError } = await Promise.race([
-          sessionPromise,
-          timeoutPromise,
-        ]);
+        let currentSession = null;
+        let sessionError = null;
+
+        try {
+          const result = await Promise.race([
+            sessionPromise,
+            timeoutPromise,
+          ]);
+          currentSession = result.data?.session || null;
+          sessionError = result.error || null;
+        } catch (raceError) {
+          sessionError = raceError;
+        }
 
         if (sessionError) {
           // Si erreur "aborted", reset et retry
@@ -219,14 +228,19 @@ export function useAuth() {
             resetSupabaseClient();
             
             // Retry une fois
-            const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
-            
-            if (retryError) {
-              AuthLog.loginFailure('session-check', retryError);
+            try {
+              const retryResult = await supabase.auth.getSession();
+              currentSession = retryResult.data?.session || null;
+              sessionError = retryResult.error || null;
+              
+              if (sessionError) {
+                AuthLog.loginFailure('session-check', sessionError);
+                throw sessionError;
+              }
+            } catch (retryError) {
+              AuthLog.loginFailure('session-retry', retryError);
               throw retryError;
             }
-            
-            currentSession = retrySession;
           } else {
             AuthLog.loginFailure('session-check', sessionError);
             ErrorLog.handled(sessionError, { context: 'getSession' });
