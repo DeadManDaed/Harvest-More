@@ -116,9 +116,9 @@ AuthLog.signupSuccess(data.user.id, email);
 setMessage({ text: '✅ Compte créé ! Redirection...', type: 'success' });
 
 // FORCER RELOAD COMPLET après 1 seconde
-setTimeout(() => {
+/*setTimeout(() => {
   window.location.href = '/';
-}, 1000);
+}, 1000);*/
       
       if (onAuthSuccess && data.session) {
         onAuthSuccess(data.session);
