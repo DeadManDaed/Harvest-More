@@ -1,6 +1,6 @@
 // pages/index.js
 import React, { useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth-with-edge-function';
 import AuthScreen from '../components/AuthScreen';
 import Head from 'next/head';
 import { UILog, AuthLog } from '../lib/log';
