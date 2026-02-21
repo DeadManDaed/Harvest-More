@@ -23,134 +23,68 @@ export function useAuth() {
   // ========================================
   // FONCTION : Charger le profil CAFCOOP
   // ========================================
-  const loadProfile = async (authUserId, retryCount = 0) => {
-    const maxRetries = 2;
-    const cacheKey = `${authUserId}-${retryCount}`;
+  // Remplace toute la fonction loadProfile dans hooks/useAuth-with-edge-function.js
+const loadProfile = async (authUserId, retryCount = 0) => {
+  const maxRetries = 2;
+  const cacheKey = `${authUserId}-${retryCount}`;
+  
+  if (loadProfileAttempted.current.has(cacheKey)) return null;
+  loadProfileAttempted.current.add(cacheKey);
+
+  const perfMeasure = PerfLog.measureStart('loadProfile-via-Edge');
+
+  try {
+    const supabase = getSupabaseBrowser();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
     
-    if (loadProfileAttempted.current.has(cacheKey)) {
-      console.warn('⚠️ loadProfile déjà en cours, skip');
-      return null;
+    // URL de ton Edge Function
+    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/create-user-profile`;
+
+    // APPEL EXCLUSIF À L'EDGE FUNCTION (Elle gère le SELECT ou l'INSERT)
+    const edgePromise = fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        id_auth: authUserId,
+        email: authUser?.email || '',
+        nom: '', 
+        prenom: '',
+        role: 'agriculteur',
+      }),
+    });
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Edge Function timeout')), 12000)
+    );
+
+    const response = await Promise.race([edgePromise, timeoutPromise]);
+    const json = await response.json();
+
+    if (!response.ok || !json.ok) {
+      throw new Error(json.error || 'Erreur Edge Function');
     }
-    loadProfileAttempted.current.add(cacheKey);
 
-    if (!authUserId) {
-      ProfileLog.loadFailure(authUserId, new Error('Missing authUserId'));
-      return null;
+    // Ton Edge Function renvoie le profil dans json.profile
+    ProfileLog.loadSuccess(authUserId, json.profile.id_utilisateur, json.profile.role);
+    perfMeasure.end();
+    return json.profile;
+
+  } catch (err) {
+    if (retryCount < maxRetries) {
+      await new Promise(res => setTimeout(res, 1500));
+      return await loadProfile(authUserId, retryCount + 1);
     }
+    ErrorLog.handled(err, { context: 'loadProfile-Edge-Fatal', authUserId });
+    throw err;
+  } finally {
+    setTimeout(() => loadProfileAttempted.current.delete(cacheKey), 5000);
+  }
+};
 
-    const perfMeasure = PerfLog.measureStart('loadProfile');
-    ProfileLog.loadAttempt(authUserId);
-
-    try {
-      const supabase = getSupabaseBrowser();
-
-      // Timeout de 10 secondes (augmenté)
-      const profilePromise = supabase
-        .from('utilisateurs')
-        .select('*')
-        .eq('id_auth', authUserId)
-        .maybeSingle();
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Profile query timeout')), 10000)
-      );
-
-      const { data: userRow, error: profileError } = await Promise.race([
-        profilePromise,
-        timeoutPromise,
-      ]);
-
-      if (profileError) {
-        if (profileError.message?.includes('aborted') && retryCount < maxRetries) {
-          console.warn(`⚠️ Signal aborted, retry ${retryCount + 1}/${maxRetries}...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          return await loadProfile(authUserId, retryCount + 1);
-        }
-
-        ProfileLog.loadFailure(authUserId, profileError);
-        ErrorLog.handled(profileError, { context: 'loadProfile', authUserId, retryCount });
-        throw profileError;
-      }
-
-      // ========================================
-      // SI PROFIL N'EXISTE PAS → APPELER EDGE FUNCTION
-      // ========================================
-      if (!userRow) {
-        ProfileLog.createAttempt(authUserId, 'fetching email...');
-        
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        const email = authUser?.email || '';
-
-        ProfileLog.createAttempt(authUserId, email);
-        
-        // URL de l'Edge Function
-        const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/create-user-profile`;
-        
-        console.log('🔵 Calling Edge Function:', EDGE_FUNCTION_URL);
-        
-        // Appel à l'Edge Function avec timeout
-        const edgeFunctionPromise = fetch(EDGE_FUNCTION_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            id_auth: authUserId,
-            email,
-            nom: '',
-            prenom: '',
-            role: 'agriculteur',
-          }),
-        });
-
-        const edgeTimeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Edge Function timeout')), 8000)
-        );
-
-        const response = await Promise.race([edgeFunctionPromise, edgeTimeoutPromise]);
-        const json = await response.json();
-
-        if (!response.ok || !json.ok) {
-          ProfileLog.createFailure(authUserId, new Error(json.error));
-          throw new Error(json.error || 'Échec création profil');
-        }
-
-        ProfileLog.createSuccess(authUserId, json.profile.id_utilisateur);
-        perfMeasure.end();
-        return json.profile;
-      }
-
-      ProfileLog.loadSuccess(authUserId, userRow.id_utilisateur, userRow.role);
-      
-      if (!userRow.nom || !userRow.prenom) {
-        ProfileLog.profileIncomplete(userRow.id_utilisateur, {
-          nom: !userRow.nom,
-          prenom: !userRow.prenom,
-        });
-      }
-
-      perfMeasure.end();
-      return userRow;
-
-    } catch (err) {
-      if (err.message?.includes('aborted') && retryCount < maxRetries) {
-        console.warn(`⚠️ Catch aborted, retry ${retryCount + 1}/${maxRetries}...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return await loadProfile(authUserId, retryCount + 1);
-      }
-
-      ProfileLog.loadFailure(authUserId, err);
-      ErrorLog.handled(err, { context: 'loadProfile', authUserId, retryCount });
-      perfMeasure.end();
-      throw err;
-    } finally {
-      setTimeout(() => {
-        loadProfileAttempted.current.delete(cacheKey);
-      }, 5000);
-    }
-  };
 
   // ========================================
   // FONCTION : Rafraîchir le profil
