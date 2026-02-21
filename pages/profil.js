@@ -1,6 +1,6 @@
 // pages/profil.js
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth-with-edge-function';
 import { getSupabaseBrowser } from '../lib/supabase';
 import { ProfileLog, UILog, ErrorLog } from '../lib/log';
 import Head from 'next/head';
