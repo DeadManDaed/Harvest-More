@@ -1,5 +1,5 @@
 // pages/debug-auth.js
-import { useAuth } from '../hooks/useAuth-with-edge-functio';
+import { useAuth } from '../hooks/useAuth-with-edge-function';
 import { getSupabaseBrowser } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 
