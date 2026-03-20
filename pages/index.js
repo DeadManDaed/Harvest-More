@@ -190,7 +190,7 @@ const styles = {
     background: '#f7fafc',
   },
   spinner: {
-    fontSize: '48px',
+    fontSize: '49px',
     animation: 'spin 2s linear infinite',
   },
   loadingText: {
