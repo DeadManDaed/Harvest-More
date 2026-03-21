@@ -2,7 +2,7 @@
 // Système d'authentification complet avec gestion multi-rôles et relations
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { getSupabaseBrowser } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
@@ -93,6 +93,7 @@ function clearLocalUserData() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export async function authFetch(url, options = {}) {
+  const supabase = getSupabaseBrowser();
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
@@ -129,6 +130,8 @@ export async function authFetch(url, options = {}) {
 async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
+      const supabase = getSupabaseBrowser();
+      
       // Charger utilisateur de base
       const { data: user, error: userError } = await supabase
         .from('utilisateurs')
@@ -178,6 +181,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
           // Réactivation automatique
           console.log('[useAuth] Réactivation auto (< 6 mois)');
           
+          const supabase = getSupabaseBrowser();
           await supabase
             .from('utilisateurs')
             .update({
@@ -193,6 +197,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
           if (!user.demande_reactivation) {
             console.log('[useAuth] Demande réactivation (> 6 mois)');
             
+            const supabase = getSupabaseBrowser();
             await supabase
               .from('utilisateurs')
               .update({
@@ -240,6 +245,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
 
       // Magasin (pour commercial, admin)
       if (user.magasin_id) {
+        const supabase = getSupabaseBrowser();
         const { data: magasin } = await supabase
           .from('magasins')
           .select('id, nom, telephone, arrondissement_id')
@@ -255,6 +261,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
 
       // Magasins multiples (pour admin)
       if (user.role === 'admin') {
+        const supabase = getSupabaseBrowser();
         const { data: adminMagasins } = await supabase
           .from('admin_magasins')
           .select(`
@@ -275,6 +282,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
 
       // Coopérative (pour agriculteur)
       if (user.cooperative_id) {
+        const supabase = getSupabaseBrowser();
         const { data: cooperative } = await supabase
           .from('cooperatives')
           .select('id, nom, president_nom, telephone_contact')
@@ -291,6 +299,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
 
       // Fiche agriculteur détaillée
       if (user.agriculteur_id) {
+        const supabase = getSupabaseBrowser();
         const { data: agriculteur } = await supabase
           .from('agriculteurs')
           .select(`
@@ -365,6 +374,7 @@ export function AuthProvider({ children }) {
         console.log('[useAuth] Profil chargé:', profile.email, profile.role);
         
         // Update derniere_activite
+        const supabase = getSupabaseBrowser();
         supabase
           .from('utilisateurs')
           .update({ date_derniere_activite: new Date().toISOString() })
@@ -406,6 +416,7 @@ export function AuthProvider({ children }) {
     const initAuth = async () => {
       try {
         console.log('[useAuth] getSession...');
+        const supabase = getSupabaseBrowser();
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -429,6 +440,7 @@ export function AuthProvider({ children }) {
 
     initAuth();
 
+    const supabase = getSupabaseBrowser();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -489,6 +501,7 @@ export function AuthProvider({ children }) {
     else if (loginInfo.type === 'telephone') {
       console.log('[useAuth] Recherche email par téléphone:', loginInfo.value);
       
+      const supabase = getSupabaseBrowser();
       const { data, error } = await supabase
         .from('utilisateurs')
         .select('email')
@@ -507,6 +520,7 @@ export function AuthProvider({ children }) {
     else if (loginInfo.type === 'username') {
       console.log('[useAuth] Recherche email par username:', loginInfo.value);
       
+      const supabase = getSupabaseBrowser();
       const { data: users, error } = await supabase
         .from('utilisateurs')
         .select('prenom, nom, email')
@@ -537,6 +551,7 @@ export function AuthProvider({ children }) {
     console.log('[useAuth] Login Supabase avec email:', email);
 
     // Login Supabase Auth
+    const supabase = getSupabaseBrowser();
     const { data, error } = await supabase.auth.signInWithPassword({ 
       email, 
       password 
@@ -553,6 +568,7 @@ export function AuthProvider({ children }) {
     
     if (!profile) {
       console.error('[useAuth] Profil introuvable, inactif ou en attente validation');
+      const supabase = getSupabaseBrowser();
       await supabase.auth.signOut();
       throw new Error('Profil introuvable, compte inactif ou en attente de validation');
     }
@@ -570,6 +586,7 @@ export function AuthProvider({ children }) {
     console.log('[useAuth] logout');
     try {
       clearLocalUserData();
+      const supabase = getSupabaseBrowser();
       await supabase.auth.signOut().catch((err) => {
         console.error('[useAuth] Erreur signOut:', err);
       });
