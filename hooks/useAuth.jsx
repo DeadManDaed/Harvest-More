@@ -34,13 +34,13 @@ const CONFIG = {
  */
 function generateUsername(prenom, nom) {
   if (!prenom || !nom) return null;
-
+  
   const normalize = str => str
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Retire accents
     .replace(/[^a-z0-9]/g, '');       // Garde que alphanumeric
-
+  
   return `${normalize(prenom)}.${normalize(nom)}`;
 }
 
@@ -49,25 +49,25 @@ function generateUsername(prenom, nom) {
  */
 function identifyLoginType(identifier) {
   if (!identifier) return null;
-
+  
   const cleaned = identifier.trim();
-
+  
   // Email : contient @ et .
   if (cleaned.includes('@') && cleaned.includes('.')) {
     return { type: 'email', value: cleaned };
   }
-
+  
   // Téléphone : commence par + ou chiffres uniquement (priorité Cameroun)
   if (/^[\+]?[0-9\s\-\(\)]+$/.test(cleaned)) {
     const cleanedPhone = cleaned.replace(/[\s\-\(\)]/g, '');
     return { type: 'telephone', value: cleanedPhone };
   }
-
+  
   // Username : format prenom.nom
   if (cleaned.includes('.')) {
     return { type: 'username', value: cleaned.toLowerCase() };
   }
-
+  
   // Par défaut, traiter comme username
   return { type: 'username', value: cleaned.toLowerCase() };
 }
@@ -153,7 +153,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
 
       if (userError) {
         console.error(`[useAuth] Erreur chargement profil (${attempt + 1}/${retries}):`, userError);
-
+        
         if (attempt < retries - 1) {
           const delay = 500 * Math.pow(2, attempt);
           await new Promise(r => setTimeout(r, delay));
@@ -177,7 +177,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
         if (inactivityDays < 180) {
           // Réactivation automatique
           console.log('[useAuth] Réactivation auto (< 6 mois)');
-
+          
           await supabase
             .from('utilisateurs')
             .update({
@@ -186,13 +186,13 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
               demande_reactivation: false,
             })
             .eq('id_auth', authId);
-
+          
           user.statut = 'actif';
         } else {
           // Marquer demande de réactivation
           if (!user.demande_reactivation) {
             console.log('[useAuth] Demande réactivation (> 6 mois)');
-
+            
             await supabase
               .from('utilisateurs')
               .update({
@@ -201,7 +201,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
               })
               .eq('id_auth', authId);
           }
-
+          
           console.warn('[useAuth] Compte inactif > 6 mois, validation requise');
           return null;
         }
@@ -322,7 +322,7 @@ async function loadUserProfile(authId, retries = CONFIG.maxRetries) {
 
     } catch (err) {
       console.error(`[useAuth] Exception chargement profil (${attempt + 1}/${retries}):`, err);
-
+      
       if (attempt < retries - 1) {
         const delay = 500 * Math.pow(2, attempt);
         await new Promise(r => setTimeout(r, delay));
@@ -360,10 +360,10 @@ export function AuthProvider({ children }) {
 
       console.log('[useAuth] Chargement profil pour:', supabaseUser.id);
       const profile = await loadUserProfile(supabaseUser.id);
-
+      
       if (profile) {
         console.log('[useAuth] Profil chargé:', profile.email, profile.role);
-
+        
         // Update derniere_activite
         supabase
           .from('utilisateurs')
@@ -373,7 +373,7 @@ export function AuthProvider({ children }) {
       } else {
         console.warn('[useAuth] Profil non trouvé, inactif ou en attente validation');
       }
-
+      
       setUser(profile ?? null);
 
     } catch (err) {
@@ -381,7 +381,7 @@ export function AuthProvider({ children }) {
       setUser(null);
     } finally {
       resolving.current = false;
-
+      
       if (!initialLoadDone.current) {
         console.log('[useAuth] Chargement initial terminé');
         initialLoadDone.current = true;
@@ -407,11 +407,11 @@ export function AuthProvider({ children }) {
       try {
         console.log('[useAuth] getSession...');
         const { data: { session }, error } = await supabase.auth.getSession();
-
+        
         if (error) {
           console.error('[useAuth] Erreur getSession:', error);
         }
-
+        
         if (mounted) {
           await resolveProfile(session?.user ?? null);
         }
@@ -469,7 +469,7 @@ export function AuthProvider({ children }) {
   // ═════════════════════════════════════════════════════════════════════════
   // Login
   // ═════════════════════════════════════════════════════════════════════════
-/*
+
   const login = async ({ identifier, password }) => {
     console.log('[useAuth] login avec:', identifier);
     
@@ -561,30 +561,7 @@ export function AuthProvider({ children }) {
     setUser(profile);
     return profile;
   };
-*/
 
-const login = async ({ username, password }) => {
-  let email = username;
-
-  if (!username.includes('@')) {
-    const { data } = await supabase
-      .from('users')
-      .select('email')
-      .eq('username', username)
-      .maybeSingle();
-    if (!data?.email) throw new Error('Utilisateur introuvable');
-    email = data.email;
-  }
-
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(error.message || 'Identifiants incorrects');
-
-  const profile = await loadUserProfile(data.user.id);
-  if (!profile) throw new Error('Profil utilisateur introuvable ou inactif');
-
-  setUser(profile);
-  return profile;
-};
   // ═════════════════════════════════════════════════════════════════════════
   // Logout
   // ═════════════════════════════════════════════════════════════════════════
@@ -611,10 +588,10 @@ const login = async ({ username, password }) => {
     loading,
     login,
     logout,
-
+    
     // Helpers
     isAuthenticated: !!user,
-
+    
     // Rôles
     isAgriculteur: user?.role === CONFIG.roles.AGRICULTEUR,
     isCommercial: user?.role === CONFIG.roles.COMMERCIAL,
@@ -622,7 +599,7 @@ const login = async ({ username, password }) => {
     isAdmin: user?.role === CONFIG.roles.ADMIN || user?.role === CONFIG.roles.SUPERADMIN,
     isSuperAdmin: user?.role === CONFIG.roles.SUPERADMIN,
     isAuditeur: user?.role === CONFIG.roles.AUDITEUR,
-
+    
     // Relations
     magasinId: user?.magasin?.id ?? null,
     magasins: user?.magasins ?? [], // Pour admin multi-magasins
